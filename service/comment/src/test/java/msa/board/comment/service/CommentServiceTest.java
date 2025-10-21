@@ -26,8 +26,8 @@ class CommentServiceTest {
     CommentRepository commentRepository;
 
     @Test
-    @DisplayName("삭제할 댓글이 자식 있으면, 삭제 표시만 한다.")
-    void deleteShouldMarkDeletedIfHasChildren() {
+    @DisplayName("삭제할 댓글이 자식 있으면, 삭제 표시만.")
+    void markDeletedIfHasChildren() {
         // given
         Long articleId = 1L;
         Long commentId = 2L;
@@ -41,6 +41,68 @@ class CommentServiceTest {
 
         // then
         verify(comment).delete();
+    }
+
+    @Test
+    @DisplayName("자식 댓글 삭제 시, 부모 댓글이 삭제 되지 않았다면, 자식 댓글만 삭제.")
+    void deleteChildOnlyIfNotDeletedParent() {
+        // given
+        Long articleId = 1L;
+        Long commentId = 2L;
+        Long parentCommentId = 1L;
+
+        Comment comment = createComment(articleId, commentId, parentCommentId);
+        given(comment.isRoot()).willReturn(false);
+
+        Comment parentComment = mock(Comment.class);
+        given(parentComment.getDeleted()).willReturn(false);
+
+        given(commentRepository.findById(commentId))
+                .willReturn(Optional.of(comment));
+        given(commentRepository.countBy(articleId, commentId, 2L)).willReturn(1L);
+
+        given(commentRepository.findById(parentCommentId))
+                .willReturn(Optional.of(parentComment));
+
+        // when
+        commentService.delete(commentId);
+
+        // then
+        verify(commentRepository).delete(comment);
+        verify(commentRepository, never()).delete(parentComment);
+
+    }
+
+    @Test
+    @DisplayName("자식 댓글 삭제 시, 부모 댓글이 삭제 되어 있다면, 재귀적으로 모두 삭제.")
+    void deleteAllRecursivelyIfDeleteParent() {
+        // given
+        Long articleId = 1L;
+        Long commentId = 2L;
+        Long parentCommentId = 1L;
+
+        Comment comment = createComment(articleId, commentId, parentCommentId);
+        given(comment.isRoot()).willReturn(false);
+
+        Comment parentComment = createComment(articleId, parentCommentId);
+        given(parentComment.isRoot()).willReturn(true);
+        given(parentComment.getDeleted()).willReturn(true);
+
+        given(commentRepository.findById(commentId))
+                .willReturn(Optional.of(comment));
+        given(commentRepository.countBy(articleId, commentId, 2L)).willReturn(1L);
+
+        given(commentRepository.findById(parentCommentId))
+                .willReturn(Optional.of(parentComment));
+        given(commentRepository.countBy(articleId, parentCommentId, 2L)).willReturn(1L);
+
+        // when
+        commentService.delete(commentId);
+
+        // then
+        verify(commentRepository).delete(comment);
+        verify(commentRepository).delete(parentComment);
+
     }
 
     private Comment createComment(Long articleId, Long commentId) {

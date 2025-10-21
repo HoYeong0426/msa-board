@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("atc/articles")
+@RequestMapping("msa/articles")
 public class ArticleController {
     private final ArticleService articleService;
 

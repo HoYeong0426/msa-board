@@ -28,7 +28,7 @@ public class ArticleApiTest {
 
     ArticleResponse create(ArticleCreateRequest request) {
         return restClient.post()
-                .uri("/atc/articles")
+                .uri("/msa/articles")
                 .body(request)
                 .retrieve()
                 .body(ArticleResponse.class);
@@ -42,7 +42,7 @@ public class ArticleApiTest {
 
     ArticleResponse read(Long articleId) {
         return restClient.get()
-                .uri("/atc/articles/{articleId}", articleId)
+                .uri("/msa/articles/{articleId}", articleId)
                 .retrieve()
                 .body(ArticleResponse.class);
     }
@@ -56,7 +56,7 @@ public class ArticleApiTest {
 
     void update(Long articleId, ArticleUpdateRequest articleUpdateRequest) {
         restClient.put()
-                .uri("atc/articles/{articleId}", articleId)
+                .uri("msa/articles/{articleId}", articleId)
                 .body(articleUpdateRequest)
                 .retrieve();
     }
@@ -64,14 +64,14 @@ public class ArticleApiTest {
     @Test
     void deleteTest() {
         restClient.delete()
-                .uri("/atc/articles/{articleId}", 231396458644623360L)
+                .uri("/msa/articles/{articleId}", 231396458644623360L)
                 .retrieve();
     }
 
     @Test
     void readAllTest() {
         ArticlePageResponse response = restClient.get()
-                .uri("/atc/articles?boardId=1&pageSize=30&page=1")
+                .uri("/msa/articles?boardId=1&pageSize=30&page=1")
                 .retrieve()
                 .body(ArticlePageResponse.class);
 
@@ -84,7 +84,7 @@ public class ArticleApiTest {
     @Test
     void readAllInfiniteScrollTest() {
         List<ArticleResponse> articles1 = restClient.get()
-                .uri("/atc/articles/infinite-scroll?boardId=1&pageSize=5")
+                .uri("/msa/articles/infinite-scroll?boardId=1&pageSize=5")
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<ArticleResponse>>() {
                 });
@@ -96,7 +96,7 @@ public class ArticleApiTest {
 
         Long lastArticleId = articles1.getLast().getArticleId();
         List<ArticleResponse> articles2 = restClient.get()
-                .uri("/atc/articles/infinite-scroll?boardId=1&pageSize=5&lastArticleId=%s".formatted(lastArticleId))
+                .uri("/msa/articles/infinite-scroll?boardId=1&pageSize=5&lastArticleId=%s".formatted(lastArticleId))
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<ArticleResponse>>() {
                 });
