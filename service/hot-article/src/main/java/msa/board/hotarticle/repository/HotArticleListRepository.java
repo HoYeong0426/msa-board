@@ -9,7 +9,6 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Repository;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -17,7 +16,7 @@ import java.util.List;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class HotArticleRepository {
+public class HotArticleListRepository {
     private final StringRedisTemplate redisTemplate;
 
     // hot-article::list::{yyyyMMdd}

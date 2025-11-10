@@ -1,4 +1,4 @@
-package msa.board.articleread.service.evnet.handle;
+package msa.board.articleread.service.event.handle;
 
 import msa.board.common.event.Event;
 import msa.board.common.event.EventPayload;

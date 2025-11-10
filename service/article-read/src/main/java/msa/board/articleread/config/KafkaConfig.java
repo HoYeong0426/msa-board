@@ -1,4 +1,4 @@
-package msa.board.hotarticle.config;
+package msa.board.articleread.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

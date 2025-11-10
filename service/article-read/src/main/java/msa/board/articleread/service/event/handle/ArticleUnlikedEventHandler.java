@@ -5,16 +5,16 @@ import msa.board.articleread.repository.ArticleQueryModelRepository;
 import msa.board.common.event.Event;
 import msa.board.common.event.EventType;
 import msa.board.common.event.payload.ArticleLikedEventPayload;
-import msa.board.common.event.payload.CommentDeletedEventPayload;
+import msa.board.common.event.payload.ArticleUnlikedEventPayload;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ArticleLikedEventHandler implements EventHandler<ArticleLikedEventPayload> {
+public class ArticleUnlikedEventHandler implements EventHandler<ArticleUnlikedEventPayload> {
     private final ArticleQueryModelRepository articleQueryModelRepository;
 
     @Override
-    public void handle(Event<ArticleLikedEventPayload> event) {
+    public void handle(Event<ArticleUnlikedEventPayload> event) {
         articleQueryModelRepository.read(event.getPayload().getArticleId())
                 .ifPresent(articleQueryModel -> {
                     articleQueryModel.updateBy(event.getPayload());
@@ -24,8 +24,8 @@ public class ArticleLikedEventHandler implements EventHandler<ArticleLikedEventP
     }
 
     @Override
-    public boolean supports(Event<ArticleLikedEventPayload> event) {
-        return EventType.ARTICLE_LIKED == event.getType();
+    public boolean supports(Event<ArticleUnlikedEventPayload> event) {
+        return EventType.ARTICLE_UNLIKED == event.getType();
     }
 
 

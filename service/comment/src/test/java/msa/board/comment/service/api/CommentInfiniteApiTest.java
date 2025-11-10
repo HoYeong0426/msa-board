@@ -10,6 +10,7 @@ import msa.board.comment.service.response.CommentResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchProperties;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -118,6 +119,28 @@ public class CommentInfiniteApiTest {
         }
 
         
+    }
+
+    @Test
+    void countTest() {
+        CommentResponse commentResponse = create(new CommentInfiniteCreateRequest(2L, "my comment", null, 1L));
+
+        Long count1 = restClient.get()
+                .uri("/msa/comments/infinite/articles/{articleId}/count", 2L)
+                .retrieve()
+                .body(Long.class);
+        System.out.println("count1 = " + count1);
+
+        restClient.delete()
+                .uri("/msa/comments/infinite/{commentId}", commentResponse.getCommentId())
+                .retrieve();
+
+        Long count2 = restClient.get()
+                .uri("msa/comments/infinite/articles/{articleId}/count",2L)
+                .retrieve()
+                .body(Long.class);
+        System.out.println("count2 = " + count2);
+
     }
 
     @Getter

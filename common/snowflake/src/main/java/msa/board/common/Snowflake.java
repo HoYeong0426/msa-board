@@ -1,4 +1,4 @@
-package msa.board.common.snowflake;
+package msa.board.common;
 
 import java.util.random.RandomGenerator;
 

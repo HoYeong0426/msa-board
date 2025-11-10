@@ -2,8 +2,7 @@ package msa.board.comment.service.data;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import kuke.board.common.snowflake.Snowflake;
-import msa.board.comment.entity.Comment;
+import msa.board.common.Snowflake;
 import msa.board.comment.entity.CommentInfinite;
 import msa.board.comment.entity.CommentPath;
 import org.junit.jupiter.api.Test;

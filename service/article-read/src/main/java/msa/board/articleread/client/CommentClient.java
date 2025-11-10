@@ -14,37 +14,26 @@ import java.util.Optional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ArticleClient {
+public class CommentClient {
     private RestClient restClient;
-    @Value("${endpoints.board-article-service.url}")
-    private String articleServiceUrl;
+    @Value("${endpoints.board-comment-service.url}")
+    private String commentServiceUrl;
 
     @PostConstruct
     public void initRestClient() {
-        restClient = RestClient.create(articleServiceUrl);
+        restClient = RestClient.create(commentServiceUrl);
     }
 
-    public Optional<ArticleResponse> read(Long articleId) {
+    public long count(Long articleId) {
         try {
-            ArticleResponse articleResponse = restClient.get()
-                    .uri("msa/articles/{articleId}", articleId)
+            return restClient.get()
+                    .uri("msa/comments/infinite/articles/{articleId}/count", articleId)
                     .retrieve()
-                    .body(ArticleResponse.class);
-            return Optional.ofNullable(articleResponse);
+                    .body(Long.class);
         } catch(Exception e) {
-            log.error("[ArticleClient.read] articleId={}", articleId, e);
-            return Optional.empty();
+            log.error("[CommentClient.read] articleId={}", articleId, e);
+            return 0;
         }
     }
 
-    @Getter
-    public static class ArticleResponse {
-        private Long articleId;
-        private String title;
-        private String content;
-        private Long boardId;
-        private Long writerId;
-        private LocalDateTime createdAt;
-        private LocalDateTime modifiedAt;
-    }
 }

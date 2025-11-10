@@ -1,34 +1,34 @@
 package msa.board.articleread.service.event.handle;
 
 import lombok.RequiredArgsConstructor;
-import msa.board.articleread.repository.ArticleQueryModel;
+import msa.board.articleread.repository.ArticleIdListRepository;
 import msa.board.articleread.repository.ArticleQueryModelRepository;
+import msa.board.articleread.repository.BoardArticleCountRepository;
 import msa.board.common.event.Event;
 import msa.board.common.event.EventType;
-import msa.board.common.event.payload.ArticleCreatedEventPayload;
+import msa.board.common.event.payload.ArticleDeletedEventPayload;
 import msa.board.common.event.payload.ArticleUpdatedEventPayload;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-
 @Component
 @RequiredArgsConstructor
-public class ArticleUpdatedEventHandler implements EventHandler<ArticleUpdatedEventPayload> {
+public class ArticleDeletedEventHandler implements EventHandler<ArticleDeletedEventPayload> {
+    private final ArticleIdListRepository articleIdListRepository;
     private final ArticleQueryModelRepository articleQueryModelRepository;
+    private final BoardArticleCountRepository boardArticleCountRepository;
 
     @Override
-    public void handle(Event<ArticleUpdatedEventPayload> event) {
-        articleQueryModelRepository.read(event.getPayload().getArticleId())
-                .ifPresent(articleQueryModel -> {
-                    articleQueryModel.updateBy(event.getPayload());
-                    articleQueryModelRepository.update(articleQueryModel);
-                });
-
+    public void handle(Event<ArticleDeletedEventPayload> event) {
+        ArticleDeletedEventPayload payload = event.getPayload();
+        articleIdListRepository.delete(payload.getBoardId(), payload.getArticleId());
+        // 게시글 삭제 시점에 사용자는 게시글 목록을 조회할 수있기때문에 목록을 먼저 제거
+        articleQueryModelRepository.delete(payload.getArticleId());
+        boardArticleCountRepository.createOrUpdate(payload.getBoardId(), payload.getBoardArticleCount());
     }
 
     @Override
-    public boolean supports(Event<ArticleUpdatedEventPayload> event) {
-        return EventType.ARTICLE_UPDATED == event.getType();
+    public boolean supports(Event<ArticleDeletedEventPayload> event) {
+        return EventType.ARTICLE_DELETED == event.getType();
     }
 
 

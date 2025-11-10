@@ -1,4 +1,6 @@
 package msa.board.articleread.cache;
 
-public interface OptimizedCacheOriginDataSupplier {
+@FunctionalInterface
+public interface OptimizedCacheOriginDataSupplier<T> {
+    T get() throws Throwable;
 }

@@ -1,13 +1,19 @@
 package msa.board.comment.service;
 
-import kuke.board.common.snowflake.Snowflake;
+import msa.board.common.Snowflake;
 import lombok.RequiredArgsConstructor;
+import msa.board.comment.entity.ArticleCommentCount;
 import msa.board.comment.entity.CommentInfinite;
 import msa.board.comment.entity.CommentPath;
+import msa.board.comment.repository.ArticleCommentCountRepository;
 import msa.board.comment.repository.CommentInfiniteRepository;
 import msa.board.comment.service.request.CommentInfiniteCreateRequest;
 import msa.board.comment.service.response.CommentPageResponse;
 import msa.board.comment.service.response.CommentResponse;
+import msa.board.common.event.EventType;
+import msa.board.common.event.payload.CommentCreatedEventPayload;
+import msa.board.common.event.payload.CommentDeletedEventPayload;
+import msa.board.common.outboxmessagerelay.OutboxEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +26,8 @@ import static java.util.function.Predicate.not;
 public class CommentInfiniteService {
     private final Snowflake snowflake = new Snowflake();
     private final CommentInfiniteRepository commentRepository;
+    private final OutboxEventPublisher outboxEventPublisher;
+    private final ArticleCommentCountRepository articleCommentCountRepository;
 
     @Transactional
     public CommentResponse create(CommentInfiniteCreateRequest request) {
@@ -37,6 +45,26 @@ public class CommentInfiniteService {
                                         .orElse(null)
                         )
                 )
+        );
+        int result = articleCommentCountRepository.increase(request.getArticleId());
+        if (result == 0) {
+            articleCommentCountRepository.save(
+                    ArticleCommentCount.init(request.getArticleId(), 1L)
+            );
+        }
+
+        outboxEventPublisher.publish(
+                EventType.COMMENT_CREATED,
+                CommentCreatedEventPayload.builder()
+                        .commentId(comment.getCommentId())
+                        .content(comment.getContent())
+                        .articleId(comment.getArticleId())
+                        .writerId(comment.getWriterId())
+                        .deleted(comment.getDeleted())
+                        .createdAt(comment.getCreatedAt())
+                        .articleCommentCount(count(comment.getArticleId()))
+                        .build(),
+                comment.getArticleId()
         );
 
         return CommentResponse.from(comment);
@@ -68,7 +96,23 @@ public class CommentInfiniteService {
                     } else {
                         delete(comment);
                     }
+
+                    outboxEventPublisher.publish(
+                            EventType.COMMENT_DELETED,
+                            CommentDeletedEventPayload.builder()
+                                    .commentId(comment.getCommentId())
+                                    .content(comment.getContent())
+                                    .articleId(comment.getArticleId())
+                                    .writerId(comment.getWriterId())
+                                    .deleted(comment.getDeleted())
+                                    .createdAt(comment.getCreatedAt())
+                                    .articleCommentCount(count(comment.getArticleId()))
+                                    .build(),
+                            comment.getArticleId()
+                    );
                 });
+
+
     }
 
     private boolean hasChildren(CommentInfinite comment) {
@@ -81,6 +125,7 @@ public class CommentInfiniteService {
     private void delete(CommentInfinite comment) {
         // 1. 현재 댓글을 삭제
         commentRepository.delete(comment);
+        articleCommentCountRepository.decrease(comment.getArticleId());
 
         // 2. 만약 루트 댓글이 아니라면 (즉, 대댓글이라면)
         if (!comment.isRoot()) {
@@ -112,6 +157,12 @@ public class CommentInfiniteService {
         return comments.stream()
                 .map(CommentResponse::from)
                 .toList();
+    }
+
+    public Long count(Long articleId) {
+        return articleCommentCountRepository.findById(articleId)
+                .map(ArticleCommentCount::getCommentCount)
+                .orElse(0L);
     }
 
 }

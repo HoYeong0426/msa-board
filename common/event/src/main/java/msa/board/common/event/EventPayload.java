@@ -1,2 +1,4 @@
-package msa.board.common.event;public class EventPayload {
+package msa.board.common.event;
+
+public interface EventPayload {
 }

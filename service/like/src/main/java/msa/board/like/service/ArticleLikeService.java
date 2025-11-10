@@ -1,7 +1,11 @@
 package msa.board.like.service;
 
-import kuke.board.common.snowflake.Snowflake;
+import msa.board.common.Snowflake;
 import lombok.RequiredArgsConstructor;
+import msa.board.common.event.EventType;
+import msa.board.common.event.payload.ArticleLikedEventPayload;
+import msa.board.common.event.payload.ArticleUnlikedEventPayload;
+import msa.board.common.outboxmessagerelay.OutboxEventPublisher;
 import msa.board.like.entity.ArticleLike;
 import msa.board.like.entity.ArticleLikeCount;
 import msa.board.like.repository.ArticleLikeCountRepository;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArticleLikeService {
     private final Snowflake snowflake = new Snowflake();
     private final ArticleLikeRepository articleLikeRepository;
+    private final OutboxEventPublisher outboxEventPublisher;
     private final ArticleLikeCountRepository articleLikeCountRepository;
 
     public ArticleLikeResponse read(Long articleId, Long userId) {
@@ -29,7 +34,7 @@ public class ArticleLikeService {
      */
     @Transactional
     public void likePessimisticLock1(Long articleId, Long userId) {
-        articleLikeRepository.save(
+        ArticleLike articleLike = articleLikeRepository.save(
                 ArticleLike.create(
                         snowflake.nextId(),
                         articleId,
@@ -46,6 +51,18 @@ public class ArticleLikeService {
                     ArticleLikeCount.init(articleId, 1L)
             );
         }
+
+        outboxEventPublisher.publish(
+                EventType.ARTICLE_LIKED,
+                ArticleLikedEventPayload.builder()
+                        .articleLikeId(articleLike.getArticleLikeId())
+                        .articleId(articleLike.getArticleId())
+                        .userId(articleLike.getUserId())
+                        .createdAt(articleLike.getCreatedAt())
+                        .articleLikeCount(count(articleLike.getArticleId()))
+                        .build(),
+                articleLike.getArticleId()
+        );
     }
 
     @Transactional
@@ -54,6 +71,17 @@ public class ArticleLikeService {
                 .ifPresent(articleLike -> {
                     articleLikeRepository.delete(articleLike);
                     articleLikeCountRepository.decrease(articleId);
+                    outboxEventPublisher.publish(
+                            EventType.ARTICLE_UNLIKED,
+                            ArticleUnlikedEventPayload.builder()
+                                    .articleLikeId(articleLike.getArticleLikeId())
+                                    .articleId(articleLike.getArticleId())
+                                    .userId(articleLike.getUserId())
+                                    .createdAt(articleLike.getCreatedAt())
+                                    .articleLikeCount(count(articleLike.getArticleId()))
+                                    .build(),
+                            articleLike.getArticleId()
+                    );
                 });
     }
 
